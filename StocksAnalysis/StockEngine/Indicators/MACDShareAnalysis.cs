@@ -12,50 +12,65 @@ namespace StocksAnalysis.StockEngine.Indicators
 {
     public class MACDShareAnalysis : IStockAnalysis
     {
-        bool IStockAnalysis.ShareAnalysis(List<decimal> numbers, out string astrResults)
+        bool IStockAnalysis.ShareAnalysis(DataTable adtTable, out string astrResults)
         {
             astrResults = string.Empty;
             bool IsBullishCrossover = false;
-            decimal MACD = 0.0m, Signal = 0.0m, Histogram = 0.0m;
-            List<decimal> last10decimal = new List<decimal>();
-            IStockAnalysis mACDShareAnalysis = new MACDShareAnalysis();
-            DataTable dataTable = mACDShareAnalysis.StockIndicator(numbers);
-            if (dataTable.IsNotNull() && dataTable.Rows.Count > 0)
-            {
-                foreach (DataRow dr in dataTable.Rows)
-                {
-                    MACD = dr["MACD"] != System.DBNull.Value ? Convert.ToDecimal(dr["MACD"]) : 0.0m;
-                    Signal = dr["Signal"] != System.DBNull.Value ? Convert.ToDecimal(dr["Signal"]) : 0.0m;
-                    Histogram = dr["Histogram"] != System.DBNull.Value ? Convert.ToDecimal(dr["Histogram"]) : 0.0m;
 
-                    if (MACD > 0 && MACD > Signal)
+            int number = 0;
+            if (int.TryParse(GlobalFunction.GetSystemSettingFromCache("SPEV"), out number))
+            {
+                List<decimal> ldecClosingValue = new List<decimal>();
+                for (int i = 0; i < number; i++)
+                {
+                    ldecClosingValue.Add(GeneralFunction.GetDecimalValueFromDataRow(adtTable.Rows[i], "CLOSE_PRICE"));
+                }
+                ldecClosingValue.Reverse();
+
+                //decimal MACD = 0.0m, Signal = 0.0m, Histogram = 0.0m;
+                List<decimal> last10decimal = new List<decimal>();
+                IStockAnalysis mACDShareAnalysis = new MACDShareAnalysis();
+                DataTable dataTable = mACDShareAnalysis.StockIndicator(ldecClosingValue);
+                if (dataTable.IsNotNull() && dataTable.Rows.Count > 0)
+                {
+                    //foreach (DataRow dr in dataTable.Rows)
+                    //{
+                    //    MACD = dr["MACD"] != System.DBNull.Value ? Convert.ToDecimal(dr["MACD"]) : 0.0m;
+                    //    Signal = dr["Signal"] != System.DBNull.Value ? Convert.ToDecimal(dr["Signal"]) : 0.0m;
+                    //    Histogram = dr["Histogram"] != System.DBNull.Value ? Convert.ToDecimal(dr["Histogram"]) : 0.0m;
+
+                    //    if (MACD > 0 && MACD > Signal)
+                    //    {
+                    //        if (Histogram > 0)
+                    //        {
+                    //            IsBullishCrossover = true;
+                    //        }
+                    //        else
+                    //            IsBullishCrossover = false;
+                    //    }
+                    //    else
+                    //    {
+                    //        IsBullishCrossover = false;
+                    //    }
+                    //}
+                    if (dataTable.Rows.Count >= 20)
                     {
-                        if (Histogram > 0)
+                        List<DataRow> ldtRow = dataTable.Rows.Cast<DataRow>().Skip(dataTable.Rows.Count - 20).ToList();
+                        if (CheckBullishCrossOver(ldtRow))
                         {
+                            astrResults = "Bullish Crossover";
                             IsBullishCrossover = true;
                         }
-                        else
-                            IsBullishCrossover = false;
-                    }
-                    else
-                    {
-                        IsBullishCrossover = false;
-                    }
-                }
-                if (dataTable.Rows.Count >= 20)
-                {
-                    List<DataRow> ldtRow = dataTable.Rows.Cast<DataRow>().Skip(dataTable.Rows.Count - 20).ToList();
-                    if(CheckBullishCrossOver(ldtRow))
-                    {
-                        astrResults = "Bullish Crossover";
-                    }
-                    if(CheckMACDDivergence(ldtRow))
-                    {
-                        astrResults = astrResults + "MACD Divergence";
-                    }
-                    if (CheckHistogramDivergence(ldtRow))
-                    {
-                        astrResults = astrResults + "Histogram Divergence";
+                        if (CheckMACDDivergence(ldtRow))
+                        {
+                            astrResults = astrResults + "MACD Divergence";
+                            IsBullishCrossover = true;
+                        }
+                        if (CheckHistogramDivergence(ldtRow))
+                        {
+                            astrResults = astrResults + "Histogram Divergence";
+                            IsBullishCrossover = true;
+                        }
                     }
                 }
             }

@@ -11,6 +11,6 @@ namespace StocksAnalysis.Interface
     {
         DataTable StockIndicator(List<decimal> numbers);        
 
-        bool ShareAnalysis(List<decimal> numbers, out string astrResults);
+        bool ShareAnalysis(DataTable adtTable, out string astrResults);
     }
 }

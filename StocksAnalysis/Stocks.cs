@@ -182,13 +182,18 @@ namespace StocksAnalysis
                                 Cast(Stock_date as date) >= Cast(DateAdd(Year, -1, Getdate()) as date)";
             ldtbDialyData = DBFunction.FetchDataFromDatabase(Constant.Common.DATABASE_NAME, Query);
 
+            DataTable ldtbSystemSetting = new DataTable();
+            Query = "Select * from STOCK_SETTING";
+            ldtbSystemSetting = DBFunction.FetchDataFromDatabase(Constant.Common.DATABASE_NAME, Query);
+            GlobalFunction.SetSystemSettingInCache(ldtbSystemSetting);
+
             Query = "Select * from STOCK_NAME where STOCK_TYPE = 'Stock'";
             List<decimal> ldecClosingValue = new List<decimal>();
             IStockAnalysis shareAnalysis;
             DataTable ldtbStockTable = DBFunction.FetchDataFromDatabase(Constant.Common.DATABASE_NAME, Query);
             foreach (DataRow dr in ldtbStockTable.Rows)
             {
-                ldecClosingValue = new List<decimal>();
+
                 DataRow dt = AnalyseDataTable.NewRow();
                 dt["Stocks"] = GeneralFunction.GetStringValueFromDataRow(dr, "STOCK_NAME");
                 dt["Symbol"] = GeneralFunction.GetStringValueFromDataRow(dr, "STOCK_SYMBOL");
@@ -198,19 +203,18 @@ namespace StocksAnalysis
                 DataTable ldtbStockIndividualData = ldtbDialyData.FilterDatatable(whereClause, "STOCK_DATE desc");
                 if (ldtbStockIndividualData.IsNotNull() && ldtbStockIndividualData.Rows.Count >= 200)
                 {
-                    for (int i = 0; i < 200; i++)
-                    {
-                        ldecClosingValue.Add(GeneralFunction.GetDecimalValueFromDataRow(ldtbStockIndividualData.Rows[i], "CLOSE_PRICE"));
-                    }
+
                     dt["CURRENT PRICE"] = ldecClosingValue.FirstOrDefault();
-                    ldecClosingValue.Reverse();
+
                     shareAnalysis = new MACDShareAnalysis();
-                    bool lblnMACDAnalysis = shareAnalysis.ShareAnalysis(ldecClosingValue, out lstrStockResult);
+                    bool lblnMACDAnalysis = shareAnalysis.ShareAnalysis(ldtbStockIndividualData, out lstrStockResult);
                     if (lstrStockResult.IsNotNullOrEmpty())
                         dt["MACD"] = lstrStockResult;
-                    
+
                     shareAnalysis = new RSIShareAnalysis();
-                    bool lblnRSIAnalysis = shareAnalysis.ShareAnalysis(ldecClosingValue, out lstrStockResult);
+                    bool lblnRSIAnalysis = shareAnalysis.ShareAnalysis(ldtbStockIndividualData, out lstrStockResult);
+                    if (lstrStockResult.IsNotNullOrEmpty())
+                        dt["RSI"] = lstrStockResult;
                     dt["PIVOT POINT"] = pivotShareAnalysis.GetPivotPoint(ldtbStockIndividualData.Rows[0]);
 
                     if (lblnMACDAnalysis && Convert.ToString(dt["MACD"]).IsNullOrEmpty())
@@ -218,13 +222,13 @@ namespace StocksAnalysis
                         dt["MACD"] = "Yes";
                     }
 
-                    if (lblnRSIAnalysis)
+                    if (lblnRSIAnalysis && Convert.ToString(dt["RSI"]).IsNullOrEmpty())
                     {
                         dt["RSI"] = "Yes";
                     }
                 }
 
-                if (Convert.ToString(dt["MACD"]).IsNotNullOrEmpty() || Convert.ToString(dt["RSI"]) == "Yes")
+                if (Convert.ToString(dt["MACD"]).IsNotNullOrEmpty() || Convert.ToString(dt["RSI"]).IsNotNullOrEmpty())
                     AnalyseDataTable.Rows.Add(dt);
             }
             dataGridView1.DataSource = AnalyseDataTable;

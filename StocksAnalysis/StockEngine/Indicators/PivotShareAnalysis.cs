@@ -9,7 +9,7 @@ using UserLibrary;
 
 namespace StocksAnalysis.StockEngine.Indicators
 {
-    public class PivotShareAnalysis : IStockAnalysis
+    public class PivotShareAnalysis 
     {
         public decimal GetPivotPoint(DataRow adtRow)
         {
@@ -52,16 +52,6 @@ namespace StocksAnalysis.StockEngine.Indicators
                 default:
                     return string.Empty;
             }
-        }
-
-        public bool ShareAnalysis(List<decimal> numbers, out string astrResults)
-        {
-            throw new NotImplementedException();
-        }
-
-        public DataTable StockIndicator(List<decimal> numbers)
-        {
-            throw new NotImplementedException();
         }
     }
 }

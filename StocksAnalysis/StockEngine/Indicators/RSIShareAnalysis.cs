@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using StocksAnalysis.BusinessLayer;
 using StocksAnalysis.Interface;
 using UserLibrary;
 
@@ -11,14 +12,45 @@ namespace StocksAnalysis.StockEngine.Indicators
 {
     public class RSIShareAnalysis : IStockAnalysis
     {
-        bool IStockAnalysis.ShareAnalysis(List<decimal> numbers, out string astrResults)
+        bool IStockAnalysis.ShareAnalysis(DataTable adtTable, out string astrResults)
         {
             astrResults = string.Empty;
-            IStockAnalysis stockAnalysis = new RSIShareAnalysis();
-            DataTable dataTable = stockAnalysis.StockIndicator(numbers);
-            decimal ldecLastRSI = Convert.ToDecimal(dataTable.Rows[dataTable.Rows.Count - 1]["RSI"]);
-            if (ldecLastRSI < 30)
-                return true;
+
+            int number = 0;
+            if (int.TryParse(GlobalFunction.GetSystemSettingFromCache("SPEV"),out number))
+            {
+                List<decimal> ldecClosingValue = new List<decimal>();
+                for (int i = 0; i < number; i++)
+                {
+                    ldecClosingValue.Add(GeneralFunction.GetDecimalValueFromDataRow(adtTable.Rows[i], "CLOSE_PRICE"));
+                }
+                ldecClosingValue.Reverse();
+
+                IStockAnalysis stockAnalysis = new RSIShareAnalysis();
+                DataTable dataTable = stockAnalysis.StockIndicator(ldecClosingValue);
+                decimal ldecLastRSI = Convert.ToDecimal(dataTable.Rows[dataTable.Rows.Count - 1]["RSI"]);
+
+                if (ldecLastRSI < 20)
+                {
+                    astrResults = "Extra Large Selling";
+                    return true;
+                }
+                if (ldecLastRSI < 30 && ldecLastRSI >= 20)
+                {
+                    astrResults = "Large Selling";
+                    return true;
+                }
+                if (ldecLastRSI > 70 && ldecLastRSI <= 80)
+                {
+                    astrResults = "Large Buying";
+                    return true;
+                }
+                if (ldecLastRSI > 80)
+                {
+                    astrResults = "Extra Large Buying";
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -28,6 +60,7 @@ namespace StocksAnalysis.StockEngine.Indicators
             Queue<decimal> ldec14deciLoss = new Queue<decimal>();
             decimal ldecOldAvgGain = 0.0m, ldecOldAverageLoss = 0.0m;
             DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("Close");
             dataTable.Columns.Add("Gain");
             dataTable.Columns.Add("Loss");
             dataTable.Columns.Add("Average_Gain");
@@ -40,6 +73,7 @@ namespace StocksAnalysis.StockEngine.Indicators
                 for (int i = 0; i < numbers.Count; i++)
                 {
                     DataRow dr = dataTable.NewRow();
+                    dr["Close"] = numbers[i];
                     if (i == 0)
                     {
                         dr["Gain"] = 0.0m;
@@ -50,7 +84,7 @@ namespace StocksAnalysis.StockEngine.Indicators
                     else
                     {
                         decimal dec = numbers[i] - numbers[i - 1];
-                        if (i == 14)
+                        if (i == 13)
                         {
                             dr["Average_Gain"] = ldecOldAvgGain = Math.Round(ldec14deciGain.Average(), 3);
                             dr["Average_Loss"] = ldecOldAverageLoss = Math.Round(ldec14deciLoss.Average(), 3);
@@ -77,7 +111,7 @@ namespace StocksAnalysis.StockEngine.Indicators
                             dr["Loss"] = Math.Abs(dec);
                             ldec14deciLoss.Enqueue(Math.Abs(dec));
                         }
-                        if(i > 14)
+                        if (i > 13)
                         {
                             dr["Average_Gain"] = ldecOldAvgGain = Math.Round((((ldecOldAvgGain * 13) + Convert.ToDecimal(dr["Gain"])) / 14), 3);
                             dr["Average_Loss"] = ldecOldAverageLoss = Math.Round((((ldecOldAverageLoss * 13) + Convert.ToDecimal(dr["Loss"])) / 14), 3);
