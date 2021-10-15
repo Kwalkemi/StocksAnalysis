@@ -38,5 +38,35 @@ namespace StocksAnalysis.BusinessLayer
                 lstrValue = ldictSetting[astrUniqueId];
             return lstrValue;
         }
+
+        public static DataTable ReverseDataTable(this DataTable originalDT, int noofrow = 0)
+        {
+
+            // create return datatable with the same structure of the original
+            DataTable reversedDT = originalDT.Clone();
+            if (noofrow == 0)
+            {
+                // iterate backwards, adding each row to the return DataTable
+                for (int i = originalDT.Rows.Count - 1; i >= 0; i--)
+                {
+                    var row = originalDT.Rows[i];
+                    reversedDT.ImportRow(row);
+                }
+            }
+            else
+            {
+                if (originalDT.Rows.Count >= noofrow)
+                {
+                    for (int i = noofrow - 1; i >= 0; i--)
+                    {
+                        var row = originalDT.Rows[i];
+                        reversedDT.ImportRow(row);
+                    }
+                }
+            }
+
+            reversedDT.AcceptChanges();
+            return reversedDT;
+        }
     }
 }

@@ -32,5 +32,19 @@ namespace StocksAnalysis.StockEngine
         {
             return Math.Round(Decimal.Divide(Math.Abs(secondnum - firstnum) * 100, firstnum), 2);
         }
+
+        public static decimal GetStandardDeviation(IEnumerable<decimal> values)
+        {
+            decimal standardDeviation = 0;
+            decimal[] enumerable = values as decimal[] ?? values.ToArray();
+            decimal count = enumerable.Count();
+            if (count > 1)
+            {
+                decimal avg = enumerable.Average();
+                decimal sum = enumerable.Sum(d => (d - avg) * (d - avg));
+                standardDeviation = (decimal)Math.Sqrt((double)sum / (double)count);
+            }
+            return Math.Round(standardDeviation, 5);
+        }
     }
 }

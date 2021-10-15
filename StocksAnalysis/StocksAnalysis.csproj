@@ -23,7 +23,7 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>3</ApplicationRevision>
+    <ApplicationRevision>4</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -85,7 +85,10 @@
     <Compile Include="BusinessLayer\GlobalFunction.cs" />
     <Compile Include="BusinessLayer\SupportClass.cs" />
     <Compile Include="Interface\IStockAnalysis.cs" />
+    <Compile Include="Interface\IStockChartPatternAnalysis.cs" />
     <Compile Include="StockEngine\Calculation.cs" />
+    <Compile Include="StockEngine\Chart\InvertedHeadAndShoulder.cs" />
+    <Compile Include="StockEngine\Indicators\BollingerBandShareAnalysis.cs" />
     <Compile Include="StockEngine\Indicators\MACDShareAnalysis.cs" />
     <Compile Include="StockEngine\Indicators\PivotShareAnalysis.cs" />
     <Compile Include="StockEngine\Indicators\RSIShareAnalysis.cs" />

@@ -174,6 +174,7 @@ namespace StocksAnalysis
             AnalyseDataTable.Columns.Add("MACD");
             AnalyseDataTable.Columns.Add("RSI");
             AnalyseDataTable.Columns.Add("PIVOT POINT");
+            AnalyseDataTable.Columns.Add("BOLLINGER BAND");
 
             string lstrStockResult = string.Empty;
 
@@ -204,7 +205,7 @@ namespace StocksAnalysis
                 if (ldtbStockIndividualData.IsNotNull() && ldtbStockIndividualData.Rows.Count >= 200)
                 {
 
-                    dt["CURRENT PRICE"] = ldecClosingValue.FirstOrDefault();
+                    dt["CURRENT PRICE"] = GeneralFunction.GetStringValueFromDataRow(ldtbStockIndividualData.Rows[0], "CLOSE_PRICE");
 
                     shareAnalysis = new MACDShareAnalysis();
                     bool lblnMACDAnalysis = shareAnalysis.ShareAnalysis(ldtbStockIndividualData, out lstrStockResult);
@@ -215,6 +216,10 @@ namespace StocksAnalysis
                     bool lblnRSIAnalysis = shareAnalysis.ShareAnalysis(ldtbStockIndividualData, out lstrStockResult);
                     if (lstrStockResult.IsNotNullOrEmpty())
                         dt["RSI"] = lstrStockResult;
+
+                    shareAnalysis = new BollingerBandShareAnalysis();
+                    bool lblnIsBollingerBandAnalysis = shareAnalysis.ShareAnalysis(ldtbStockIndividualData, out lstrStockResult);
+
                     dt["PIVOT POINT"] = pivotShareAnalysis.GetPivotPoint(ldtbStockIndividualData.Rows[0]);
 
                     if (lblnMACDAnalysis && Convert.ToString(dt["MACD"]).IsNullOrEmpty())
@@ -226,9 +231,14 @@ namespace StocksAnalysis
                     {
                         dt["RSI"] = "Yes";
                     }
+
+                    if (lblnIsBollingerBandAnalysis)
+                    {
+                        dt["BOLLINGER BAND"] = "Yes";
+                    }
                 }
 
-                if (Convert.ToString(dt["MACD"]).IsNotNullOrEmpty() || Convert.ToString(dt["RSI"]).IsNotNullOrEmpty())
+                if (Convert.ToString(dt["MACD"]).IsNotNullOrEmpty() || Convert.ToString(dt["RSI"]).IsNotNullOrEmpty() || Convert.ToString(dt["BOLLINGER BAND"]).IsNotNullOrEmpty())
                     AnalyseDataTable.Rows.Add(dt);
             }
             dataGridView1.DataSource = AnalyseDataTable;
@@ -242,7 +252,7 @@ namespace StocksAnalysis
                 string symbol = Convert.ToString(dataGridView1.Rows[e.RowIndex].Cells[1].Value);
                 decimal PivotNumber = Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells[e.ColumnIndex].Value);
                 string CurrentNumber = Convert.ToString(dataGridView1.Rows[e.RowIndex].Cells[2].Value);
-                string query = @"Select Top 1 * from [dbo].[STOCK_DAILY_DATA] A with (nolock)
+                string query = @"Select To p 1 * from [dbo].[STOCK_DAILY_DATA] A with (nolock)
                                 inner join[dbo].[STOCK_NAME] B on A.[STOCK_ID] = B.STOCK_ID Where[STOCK_SYMBOL] = '{0}' order by[STOCK_DATE] desc";
 
                 query = string.Format(query, symbol);
